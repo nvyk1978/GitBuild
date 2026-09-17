@@ -28,8 +28,6 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           packages: ''
-          accept-android-sdk-licenses: 'yes'
-          log-accepted-android-sdk-licenses: 'false'
 
       - name: Install Android SDK 36
         shell: bash
