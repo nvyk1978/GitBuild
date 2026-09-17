@@ -13,6 +13,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,10 +25,24 @@ jobs:
           java-version: '17'
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: ''
+          accept-android-sdk-licenses: false
+
+      - name: Accept Android SDK licenses
+        shell: bash
+        run: |
+          set +o pipefail
+          yes | sdkmanager --licenses >/dev/null
+          set -o pipefail
 
       - name: Install Android SDK 36
-        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+        run: |
+          sdkmanager --install \
+            'platform-tools' \
+            'platforms;android-36' \
+            'build-tools;36.0.0'
 
       - name: Set up Gradle 9.6
         uses: gradle/actions/setup-gradle@v4
@@ -41,12 +56,16 @@ jobs:
           unzip -q source.zip -d project
 
       - name: Build debug APK
-        run: gradle -p project :app:assembleDebug --stacktrace
+        run: gradle --no-daemon -p project :app:assembleDebug --stacktrace
 
       - name: Name APK
+        shell: bash
         run: |
           mkdir -p out
-          VERSION=$(grep -m1 "versionName" project/app/build.gradle | sed -E "s/.*versionName[[:space:]]+'([^']+)'.*/\1/")
+          VERSION=$(sed -nE "s/.*versionName[[:space:]]+['\"]([^'\"]+)['\"].*/\1/p" project/app/build.gradle | head -n1)
+          if [ -z "$VERSION" ]; then
+            VERSION="unknown"
+          fi
           cp project/app/build/outputs/apk/debug/app-debug.apk "out/GitBuild_${VERSION}.apk"
 
       - name: Upload APK artifact
