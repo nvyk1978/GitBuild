@@ -28,16 +28,11 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           packages: ''
-          accept-android-sdk-licenses: false
-
-      - name: Accept Android SDK licenses
-        shell: bash
-        run: |
-          set +o pipefail
-          yes | sdkmanager --licenses >/dev/null
-          set -o pipefail
+          accept-android-sdk-licenses: 'yes'
+          log-accepted-android-sdk-licenses: 'false'
 
       - name: Install Android SDK 36
+        shell: bash
         run: |
           sdkmanager --install \
             'platform-tools' \
@@ -50,6 +45,7 @@ jobs:
           gradle-version: '9.6.0'
 
       - name: Unpack source
+        shell: bash
         run: |
           rm -rf project
           mkdir project
@@ -63,9 +59,7 @@ jobs:
         run: |
           mkdir -p out
           VERSION=$(sed -nE "s/.*versionName[[:space:]]+['\"]([^'\"]+)['\"].*/\1/p" project/app/build.gradle | head -n1)
-          if [ -z "$VERSION" ]; then
-            VERSION="unknown"
-          fi
+          [ -n "$VERSION" ] || VERSION="unknown"
           cp project/app/build/outputs/apk/debug/app-debug.apk "out/GitBuild_${VERSION}.apk"
 
       - name: Upload APK artifact
